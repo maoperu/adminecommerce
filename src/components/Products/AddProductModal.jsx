@@ -36,8 +36,14 @@ const AddProductModal = ({ open, handleClose, handleAdd, handleUpdate, editProdu
   const [openAlert, setOpenAlert] = useState(false);
   const [errors, setErrors] = useState({});
 
+  // Add this state to track multiple image URLs
+  const [imageUrls, setImageUrls] = useState(['']);
+
+  // Modify useEffect to handle multiple images
   useEffect(() => {
     if (editProduct) {
+      const urls = editProduct.imageUrl ? editProduct.imageUrl.split(' ') : [''];
+      setImageUrls(urls);
       setProduct({
         product_name: editProduct.product_name || '',
         description: editProduct.description || '',
@@ -48,6 +54,7 @@ const AddProductModal = ({ open, handleClose, handleAdd, handleUpdate, editProdu
         id: editProduct.id // Important to keep the id for updating
       });
     } else {
+      setImageUrls(['']);
       setProduct({
         product_name: '',
         description: '',
@@ -70,6 +77,24 @@ const AddProductModal = ({ open, handleClose, handleAdd, handleUpdate, editProdu
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleImageUrlChange = (index, value) => {
+    const newUrls = [...imageUrls];
+    newUrls[index] = value;
+    setImageUrls(newUrls);
+    setProduct({ ...product, imageUrl: newUrls.join(' ') });
+  };
+
+  const removeImageUrl = (indexToRemove) => {
+    const newUrls = imageUrls.filter((_, index) => index !== indexToRemove);
+    setImageUrls(newUrls);
+    setProduct({ ...product, imageUrl: newUrls.join(' ') });
+  };
+
+  // Add this function to add new image URL field
+  const addImageUrl = () => {
+    setImageUrls([...imageUrls, '']);
   };
 
   const handleSubmit = (e) => {
@@ -96,7 +121,7 @@ const AddProductModal = ({ open, handleClose, handleAdd, handleUpdate, editProdu
           {editProduct ? 'Editar producto' : 'Añadir nuevo producto'}
         </Typography>
         <form onSubmit={handleSubmit}>
-          <Stack spacing={2}>
+          <Stack spacing={1}>
             <TextField
               label="Nombre"
               fullWidth
@@ -146,14 +171,42 @@ const AddProductModal = ({ open, handleClose, handleAdd, handleUpdate, editProdu
                 helperText={errors.stock}
               />
             </Box>
-            <TextField
-              label="Image URL"
-              fullWidth
-              value={product.imageUrl}
-              onChange={(e) => setProduct({ ...product, imageUrl: e.target.value })}
-              error={!!errors.imageUrl}
-              helperText={errors.imageUrl || "Enter the URL of the product image"}
-            />
+            {imageUrls.map((url, index) => (
+              <Box key={index} sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                <TextField
+                  label={`Image URL ${index + 1}`}
+                  fullWidth
+                  value={url}
+                  onChange={(e) => handleImageUrlChange(index, e.target.value)}
+                  error={!!errors.imageUrl && index === 0}
+                  helperText={(!!errors.imageUrl && index === 0) ? errors.imageUrl : "Enter the URL of the product image"}
+                />
+                {index > 0 && (
+                  <Button
+                    onClick={() => removeImageUrl(index)}
+                    color="error"
+                    variant="outlined"
+                    size="small"
+                    sx={{ 
+                      minWidth: '40px', 
+                      height: '40px', 
+                      p: 0,
+                      mt: 1 // Add margin top to align with TextField
+                    }}
+                  >
+                    X
+                  </Button>
+                )}
+              </Box>
+            ))}
+            <Button
+              type="button"
+              onClick={addImageUrl}
+              variant="outlined"
+              size="small"
+            >
+              Añadir otra foto
+            </Button>
             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
               <Button variant="outlined" onClick={handleClose}>
                 Cancelar
