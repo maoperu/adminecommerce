@@ -31,7 +31,8 @@ const AddProductModal = ({ open, handleClose, handleAdd, handleUpdate, editProdu
     price: '',
     categories: '',
     stock: '',
-    imageUrl: ''
+    imageUrl: '',
+    colores :''
   });
   const [openAlert, setOpenAlert] = useState(false);
   const [errors, setErrors] = useState({});
@@ -39,32 +40,61 @@ const AddProductModal = ({ open, handleClose, handleAdd, handleUpdate, editProdu
   // Add this state to track multiple image URLs
   const [imageUrls, setImageUrls] = useState(['']);
 
-  // Modify useEffect to handle multiple images
+  // Initial state
+    const [colorUrls, setColorUrls] = useState(['#ffffff']);
+  
+  // Update useEffect
   useEffect(() => {
     if (editProduct) {
       const urls = editProduct.imageUrl ? editProduct.imageUrl.split(' ') : [''];
+      const colores = editProduct.colores ? editProduct.colores.split(' ') : ['#ffffff'];
       setImageUrls(urls);
+      setColorUrls(colores);
       setProduct({
-        product_name: editProduct.product_name || '',
-        description: editProduct.description || '',
-        price: editProduct.price || '',
-        categories: editProduct.categories || '',
-        stock: editProduct.stock || '',
+        ...editProduct,
         imageUrl: editProduct.imageUrl || '',
-        id: editProduct.id // Important to keep the id for updating
+        colores: editProduct.colores || '',
+        id: editProduct.id
       });
     } else {
       setImageUrls(['']);
+      setColorUrls(['#ffffff']);
       setProduct({
         product_name: '',
         description: '',
         price: '',
         categories: '',
         stock: '',
-        imageUrl: ''
+        imageUrl: '',
+        colores: ''
       });
     }
   }, [editProduct]);
+
+  // Color handling functions
+  const handleColorChange = (index, color) => {
+    const newcolores = [...colorUrls];
+    newcolores[index] = color;
+    setColorUrls(newcolores);
+    setProduct({ ...product, colores: newcolores.join(' ') });
+  };
+
+  const addImageUrl = () => {
+    setImageUrls([...imageUrls, '']);
+    setColorUrls([...colorUrls, '']);
+  };
+
+  const removeImageUrl = (indexToRemove) => {
+    const newUrls = imageUrls.filter((_, index) => index !== indexToRemove);
+    const newcolores = colorUrls.filter((_, index) => index !== indexToRemove);
+    setImageUrls(newUrls);
+    setColorUrls(newcolores);
+    setProduct({ 
+      ...product, 
+      imageUrl: newUrls.join(' '),
+      colores: newcolores.join(' ')
+    });
+  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -86,16 +116,19 @@ const AddProductModal = ({ open, handleClose, handleAdd, handleUpdate, editProdu
     setProduct({ ...product, imageUrl: newUrls.join(' ') });
   };
 
-  const removeImageUrl = (indexToRemove) => {
+  /*const removeImageUrl = (indexToRemove) => {
     const newUrls = imageUrls.filter((_, index) => index !== indexToRemove);
     setImageUrls(newUrls);
     setProduct({ ...product, imageUrl: newUrls.join(' ') });
   };
+  */
 
   // Add this function to add new image URL field
+  /*
   const addImageUrl = () => {
     setImageUrls([...imageUrls, '']);
   };
+  */
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -172,33 +205,50 @@ const AddProductModal = ({ open, handleClose, handleAdd, handleUpdate, editProdu
               />
             </Box>
             {imageUrls.map((url, index) => (
-              <Box key={index} sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-                <TextField
-                  label={`Image URL ${index + 1}`}
-                  fullWidth
-                  value={url}
-                  onChange={(e) => handleImageUrlChange(index, e.target.value)}
-                  error={!!errors.imageUrl && index === 0}
-                  helperText={(!!errors.imageUrl && index === 0) ? errors.imageUrl : "Enter the URL of the product image"}
-                />
-                {index > 0 && (
-                  <Button
-                    onClick={() => removeImageUrl(index)}
-                    color="error"
-                    variant="outlined"
-                    size="small"
-                    sx={{ 
-                      minWidth: '40px', 
-                      height: '40px', 
-                      p: 0,
-                      mt: 1 // Add margin top to align with TextField
-                    }}
-                  >
-                    X
-                  </Button>
-                )}
-              </Box>
-            ))}
+            <Box key={index} sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+              <TextField
+                label={`Image URL ${index + 1}`}
+                fullWidth
+                value={url}
+                onChange={(e) => handleImageUrlChange(index, e.target.value)}
+                error={!!errors.imageUrl && index === 0}
+                helperText={(!!errors.imageUrl && index === 0) ? errors.imageUrl : "Enter the URL of the product image"}
+              />
+              
+              {/* Nuevo selector de color */}
+              <input
+                type="color"
+                value={colorUrls[index] || ""} // colorUrls será otro arreglo similar a imageUrls
+                onChange={(e) => handleColorChange(index, e.target.value)}
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  border: 'none',
+                  background: 'none',
+                  cursor: 'pointer',
+                  marginTop: '8px' // para alinear con el TextField
+                }}
+              />
+
+              {index > 0 && (
+                <Button
+                  onClick={() => removeImageUrl(index)}
+                  color="error"
+                  variant="outlined"
+                  size="small"
+                  sx={{ 
+                    minWidth: '40px', 
+                    height: '40px', 
+                    p: 0,
+                    mt: 1 // margin top para alinear
+                  }}
+                >
+                  X
+                </Button>
+              )}
+            </Box>
+          ))}
+
             <Button
               type="button"
               onClick={addImageUrl}
