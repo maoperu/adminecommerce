@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Modal,
   Box,
@@ -24,6 +24,63 @@ const style = {
   overflowY: 'auto'
 };
 
+function ColorPickerWithNull({ color, onColorChange }) {
+  const [isNull, setIsNull] = useState(color === null);
+  const colorInputRef = useRef(null);
+
+  const handleColorChange = (e) => {
+    const value = e.target.value;
+    setIsNull(false);
+    onColorChange(value);
+  };
+
+  const handleButtonClick = () => {
+    if (isNull && colorInputRef.current) {
+      colorInputRef.current.click();
+    } else {
+      setIsNull(true);
+      onColorChange(null);
+    }
+  };
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      <input
+        ref={colorInputRef}
+        type="color"
+        value={color || "#ffffff"}
+        onChange={handleColorChange}
+        style={{
+          width: isNull ? "0px" : "40px",
+          height: isNull ? "0px" : "40px",
+          opacity: isNull ? 0 : 1,
+          border: "none",
+          background: "none",
+          cursor: "pointer",
+          marginTop: "8px",
+          padding: 0,
+        }}
+      />
+
+      <button
+        type="button"
+        onClick={handleButtonClick}
+        style={{
+          background: "#eee",
+          border: "1px solid #999",
+          borderRadius: "5px",
+          padding: "5px 10px",
+          cursor: "pointer",
+          marginTop: "8px",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {isNull ? "Seleccionar color" : "Quitar color"}
+      </button>
+    </div>
+  );
+}
+
 const AddProductModal = ({ open, handleClose, handleAdd, handleUpdate, editProduct }) => {
   const [product, setProduct] = useState({
     product_name: '',
@@ -47,7 +104,9 @@ const AddProductModal = ({ open, handleClose, handleAdd, handleUpdate, editProdu
   useEffect(() => {
     if (editProduct) {
       const urls = editProduct.imageUrl ? editProduct.imageUrl.split(' ') : [''];
-      const colores = editProduct.colores ? editProduct.colores.split(' ') : ['#ffffff'];
+      const colores = editProduct.colores
+  ? editProduct.colores.split(' ').map(c => c === 'null' ? null : c)
+  : ['#ffffff'];
       setImageUrls(urls);
       setColorUrls(colores);
       setProduct({
@@ -76,7 +135,9 @@ const AddProductModal = ({ open, handleClose, handleAdd, handleUpdate, editProdu
     const newcolores = [...colorUrls];
     newcolores[index] = color;
     setColorUrls(newcolores);
-    setProduct({ ...product, colores: newcolores.join(' ') });
+    const cleanColors = newcolores.map(c => c === null || c === '' ? 'null' : c);
+    setProduct({ ...product, colores: cleanColors.join(' ') });
+
   };
 
   const addImageUrl = () => {
@@ -142,7 +203,7 @@ const AddProductModal = ({ open, handleClose, handleAdd, handleUpdate, editProdu
     setOpenAlert(true);
     setTimeout(() => {
       handleClose();
-      setProduct({ product_name: '', description: '', price: '', categories: '', stock: '', imageUrl: '' });
+      setProduct({ product_name: '', description: '', price: '', categories: '', stock: '', imageUrl: '', colores: '' });
       setErrors({});
     }, 1500);
   };
@@ -216,18 +277,9 @@ const AddProductModal = ({ open, handleClose, handleAdd, handleUpdate, editProdu
               />
               
               {/* Nuevo selector de color */}
-              <input
-                type="color"
-                value={colorUrls[index] || ""} // colorUrls será otro arreglo similar a imageUrls
-                onChange={(e) => handleColorChange(index, e.target.value)}
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  border: 'none',
-                  background: 'none',
-                  cursor: 'pointer',
-                  marginTop: '8px' // para alinear con el TextField
-                }}
+              <ColorPickerWithNull
+                color={colorUrls[index]}
+                onColorChange={(newColor) => handleColorChange(index, newColor)}
               />
 
               {index > 0 && (
