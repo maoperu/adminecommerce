@@ -12,9 +12,13 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { Editor } from '@tinymce/tinymce-react';
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import TextAlign from '@tiptap/extension-text-align'
+import Color from '@tiptap/extension-color'
+import Link from '@tiptap/extension-link' // Añadir esta importación
 
 const API_URL = process.env.REACT_APP_API_URL_PRODUCTION;
-const TINYMCE_API = process.env.REACT_APP_TINYMCE_API_KEY;
 
 const Settings = () => {
   const [businessName, setBusinessName] = useState('');
@@ -97,6 +101,49 @@ const Settings = () => {
     setOpenSnackbar(true);
   };
 
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
+      Color,
+      Link.configure({
+        openOnClick: true,
+        HTMLAttributes: {
+          rel: 'noopener noreferrer',
+          target: '_blank',
+        },
+      }),
+    ],
+    content: cintillo,
+    onUpdate: ({ editor }) => {
+      setCintillo(editor.getHTML());
+    },
+  });
+
+  // Añadir este useEffect para actualizar el contenido del editor
+  useEffect(() => {
+    if (editor && cintillo) {
+      editor.commands.setContent(cintillo);
+    }
+  }, [cintillo, editor]);
+
+  const setLink = () => {
+    const url = window.prompt('Ingrese la URL:');
+
+    if (url === null) {
+      return;
+    }
+
+    if (url === '') {
+      editor?.chain().focus().extendMarkRange('link').unsetLink().run();
+      return;
+    }
+
+    editor?.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+  };
+
   return (
     <Container maxWidth="sm">
       <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
@@ -127,24 +174,48 @@ const Settings = () => {
           <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
             Cintillo
           </Typography>
-          <Editor
-            apiKey={TINYMCE_API}
-            value={cintillo}
-            onEditorChange={(content) => setCintillo(content)}
-            init={{
-              height: 300,
-              menubar: false,
-              plugins: [
-                'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
-              ],
-              toolbar: 'undo redo | blocks | ' +
-                'bold italic forecolor | alignleft aligncenter ' +
-                'alignright alignjustify | bullist numlist outdent indent | ' +
-                'removeformat | help',
-            }}
-          />
+          <Box sx={{ border: '1px solid #ccc', borderRadius: 1, mb: 2 }}>
+            <Box sx={{ p: 1, borderBottom: '1px solid #ccc', bgcolor: '#f5f5f5' }}>
+              <Button
+                size="small"
+                onClick={() => editor?.chain().focus().toggleBold().run()}
+                sx={{ minWidth: 'auto', p: 0.5 }}
+              >
+                <strong>B</strong>
+              </Button>
+              <Button
+                size="small"
+                onClick={() => editor?.chain().focus().toggleItalic().run()}
+                sx={{ minWidth: 'auto', p: 0.5, mx: 0.5 }}
+              >
+                <em>I</em>
+              </Button>
+              <Button
+                size="small"
+                onClick={() => editor?.chain().focus().setTextAlign('left').run()}
+                sx={{ minWidth: 'auto', p: 0.5 }}
+              >
+                🡄
+              </Button>
+              <Button
+                size="small"
+                onClick={() => editor?.chain().focus().setTextAlign('center').run()}
+                sx={{ minWidth: 'auto', p: 0.5, mx: 0.5 }}
+              >
+                ▇
+              </Button>
+              <Button
+                size="small"
+                onClick={() => editor?.chain().focus().setTextAlign('right').run()}
+                sx={{ minWidth: 'auto', p: 0.5 }}
+              >
+                🡆
+              </Button>
+            </Box>
+            <Box sx={{ p: 2 }}>
+              <EditorContent editor={editor} />
+            </Box>
+          </Box>
           
           <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
             <Button
